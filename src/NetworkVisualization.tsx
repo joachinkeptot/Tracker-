@@ -99,21 +99,21 @@ export const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({
     const width = containerRef.current.clientWidth;
     const height = containerRef.current.clientHeight;
 
-    const graph = new (ForceGraph as any)(containerRef.current)
+    const ForceGraphConstructor = ForceGraph as unknown as typeof ForceGraph;
+    const graph = new (ForceGraphConstructor as any)(containerRef.current)
       .graphData(graphData)
       .width(width)
       .height(height)
-      .nodeCanvasObject((node: any, ctx: CanvasRenderingContext2D) => {
-        const nodeData = node as NodeData;
-        const size = (nodeData.val || 10) / 2;
+      .nodeCanvasObject((node: NodeData, ctx: CanvasRenderingContext2D) => {
+        const size = (node.val || 10) / 2;
 
-        ctx.fillStyle = nodeData.color || "#4cc9f0";
+        ctx.fillStyle = node.color || "#4cc9f0";
         ctx.beginPath();
-        ctx.arc(nodeData.x || 0, nodeData.y || 0, size, 0, 2 * Math.PI);
+        ctx.arc(node.x || 0, node.y || 0, size, 0, 2 * Math.PI);
         ctx.fill();
 
         // Draw border if selected in connection mode
-        if (connectionMode && nodeData.id === selectedNodeInMode) {
+        if (connectionMode && node.id === selectedNodeInMode) {
           ctx.strokeStyle = "#fbbf24";
           ctx.lineWidth = 3;
           ctx.stroke();
@@ -125,20 +125,19 @@ export const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         const displayName =
-          nodeData.name && nodeData.name.length > 15
-            ? nodeData.name.substring(0, 12) + "..."
-            : nodeData.name || "";
-        ctx.fillText(displayName, nodeData.x || 0, nodeData.y! + size + 8);
+          node.name && node.name.length > 15
+            ? node.name.substring(0, 12) + "..."
+            : node.name || "";
+        ctx.fillText(displayName, node.x || 0, (node.y || 0) + size + 8);
       })
-      .linkCanvasObject((link: any, ctx: CanvasRenderingContext2D) => {
-        const linkData = link as any;
-        const source = linkData.source as NodeData;
-        const target = linkData.target as NodeData;
+      .linkCanvasObject((link: LinkData, ctx: CanvasRenderingContext2D) => {
+        const source = link.source as unknown as NodeData;
+        const target = link.target as unknown as NodeData;
 
         if (!source.x || !source.y || !target.x || !target.y) return;
 
-        const connectionType = linkData.connectionType as ConnectionType;
-        const strength = linkData.strength as number;
+        const connectionType = link.connectionType;
+        const strength = link.strength;
 
         // Color by type
         const colorMap: Record<ConnectionType, string> = {
@@ -167,15 +166,13 @@ export const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({
 
         ctx.setLineDash([]);
       })
-      .onNodeClick((node: any) => {
-        const nodeData = node as NodeData;
-
+      .onNodeClick((node: NodeData) => {
         if (connectionMode) {
           if (!selectedNodeInMode) {
-            setSelectedNodeInMode(nodeData.id);
-          } else if (selectedNodeInMode !== nodeData.id) {
+            setSelectedNodeInMode(node.id);
+          } else if (selectedNodeInMode !== node.id) {
             const personA = people.find((p) => p.id === selectedNodeInMode)!;
-            const personB = people.find((p) => p.id === nodeData.id)!;
+            const personB = people.find((p) => p.id === node.id)!;
             onAddConnection?.(personA, personB);
             setConnectionMode(false);
             setSelectedNodeInMode(null);
@@ -183,21 +180,23 @@ export const NetworkVisualization: React.FC<NetworkVisualizationProps> = ({
             setSelectedNodeInMode(null);
           }
         } else {
-          onNodeClick?.(nodeData.id);
+          onNodeClick?.(node.id);
         }
       })
-      .onLinkHover((link: any) => {
+
+      .onLinkHover((link: LinkData | null) => {
         if (link) {
-          const linkData = link as any;
-          const connectionType = linkData.connectionType as ConnectionType;
-          const strength = linkData.strength as number;
-          const source = people.find((p) => p.id === linkData.source.id);
-          const target = people.find((p) => p.id === linkData.target.id);
+          const source = link.source as unknown as NodeData;
+          const target = link.target as unknown as NodeData;
+          const connectionType = link.connectionType;
+          const strength = link.strength;
+          const personA = people.find((p) => p.id === source.id);
+          const personB = people.find((p) => p.id === target.id);
 
           setTooltip({
-            x: (linkData.source.x + linkData.target.x) / 2,
-            y: (linkData.source.y + linkData.target.y) / 2,
-            text: `${source?.name} <-> ${target?.name}\nType: ${connectionType}\nStrength: ${strength}/10`,
+            x: ((source.x || 0) + (target.x || 0)) / 2,
+            y: ((source.y || 0) + (target.y || 0)) / 2,
+            text: `${personA?.name} <-> ${personB?.name}\nType: ${connectionType}\nStrength: ${strength}/10`,
           });
         } else {
           setTooltip(null);

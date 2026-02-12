@@ -9,12 +9,16 @@ import { Statistics } from "./Statistics";
 import { Tools } from "./Tools";
 import { ItemModal } from "./ItemModal";
 import { FamilyModal } from "./FamilyModal";
+import { ImportModal } from "./ImportModal";
+import Analytics from "./Analytics";
 import {
   FilterState,
   AdvancedFilterState,
   Person,
   Activity,
   ActivityType,
+  Category,
+  EmploymentStatus,
 } from "./types";
 import { exportToCSV } from "./utils";
 import "./styles.css";
@@ -57,6 +61,7 @@ const AppContent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPersonId, setEditingPersonId] = useState<string | null>(null);
   const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [useAdvancedFilters, setUseAdvancedFilters] = useState(false);
 
   // Get active items based on view mode
@@ -134,7 +139,14 @@ const AppContent: React.FC = () => {
     if (advancedFilters.jyTexts.length > 0) {
       filtered = filtered.filter((p) =>
         advancedFilters.jyTexts.every((text) =>
-          p.jyTextsCompleted.includes(text),
+          (p.jyTexts || []).some((jy) => {
+            // Handle both string format and object format
+            if (typeof jy === "string") {
+              return jy === text;
+            }
+            // If it's an object, check by book number or name
+            return jy.bookNumber === parseInt(text) || text.includes("Book");
+          }),
         ),
       );
     }
@@ -163,8 +175,12 @@ const AppContent: React.FC = () => {
 
     // Employment status filter
     if (advancedFilters.employmentStatuses.length > 0) {
-      filtered = filtered.filter((p) =>
-        advancedFilters.employmentStatuses.includes(p.employmentStatus),
+      filtered = filtered.filter(
+        (p) =>
+          p.employmentStatus &&
+          advancedFilters.employmentStatuses.includes(
+            p.employmentStatus as EmploymentStatus,
+          ),
       );
     }
 
@@ -172,8 +188,8 @@ const AppContent: React.FC = () => {
     if (advancedFilters.inSchool !== null) {
       filtered = filtered.filter((p) =>
         advancedFilters.inSchool
-          ? p.schoolName !== null && p.schoolName.trim() !== ""
-          : p.schoolName === null || p.schoolName.trim() === "",
+          ? p.schoolName !== undefined && p.schoolName.trim() !== ""
+          : !p.schoolName || p.schoolName.trim() === "",
       );
     }
 
@@ -196,29 +212,41 @@ const AppContent: React.FC = () => {
       const query = searchQuery.toLowerCase();
       items = items.filter((item) => {
         const name = item.name.toLowerCase();
-        const note = item.note?.toLowerCase() || "";
 
         if ("ageGroup" in item) {
           const person = item as Person;
+          const notes = (person.notes || "").toLowerCase();
           const area = person.area.toLowerCase();
           const categories = person.categories.join(" ").toLowerCase();
-          const jyTexts = person.jyTextsCompleted.join(" ").toLowerCase();
+          const jyTexts = item.jyTexts
+            ? item.jyTexts
+                .map((j) =>
+                  typeof j === "string" ? j : `Book ${j.bookNumber}`,
+                )
+                .join(" ")
+                .toLowerCase()
+            : "";
           return (
             name.includes(query) ||
             area.includes(query) ||
             categories.includes(query) ||
             jyTexts.includes(query) ||
-            note.includes(query)
+            notes.includes(query)
           );
         } else {
           const activity = item as Activity;
           const type = activity.type.toLowerCase();
-          const leader = activity.leader.toLowerCase();
+          const leader = (
+            activity.leader ||
+            activity.facilitator ||
+            ""
+          ).toLowerCase();
+          const activityNotes = (activity.notes || "").toLowerCase();
           return (
             name.includes(query) ||
             type.includes(query) ||
             leader.includes(query) ||
-            note.includes(query)
+            activityNotes.includes(query)
           );
         }
       });
@@ -233,14 +261,20 @@ const AppContent: React.FC = () => {
         if (filters.area && person.area !== filters.area) return false;
         if (
           filters.category &&
-          !person.categories.includes(filters.category as any)
+          !person.categories.includes(filters.category as Category)
         )
           return false;
         if (filters.ruhiMin !== null && person.ruhiLevel < filters.ruhiMin)
           return false;
         if (filters.ruhiMax !== null && person.ruhiLevel > filters.ruhiMax)
           return false;
-        if (filters.jyText && !person.jyTextsCompleted.includes(filters.jyText))
+        if (
+          filters.jyText &&
+          !(person.jyTexts || []).some((jy) => {
+            if (typeof jy === "string") return jy === filters.jyText;
+            return false;
+          })
+        )
           return false;
 
         return true;
@@ -318,6 +352,7 @@ const AppContent: React.FC = () => {
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onAddItem={handleAddItem}
+            onImport={() => setIsImportModalOpen(true)}
           />
 
           <div
@@ -357,31 +392,43 @@ const AppContent: React.FC = () => {
             />
           )}
 
-          <div className="panel__section">
-            <Canvas
-              filteredItems={
-                useAdvancedFilters
-                  ? (filteredPeople as (Person | Activity)[])
-                  : (filteredItems as (Person | Activity)[])
-              }
-              highlightedIds={useAdvancedFilters ? highlightedIds : undefined}
-            />
-          </div>
-
-          <div className="panel__section">
-            <h2>Details</h2>
-            <DetailPanel onEdit={handleEditPerson} />
-            <Statistics />
-            <div className="legend">
-              <span className="legend__title">Categories</span>
-              <span className="legend__item legend__item--jy">JY</span>
-              <span className="legend__item legend__item--cc">CC</span>
-              <span className="legend__item legend__item--youth">Youth</span>
-              <span className="legend__item legend__item--parents">
-                Parents
-              </span>
+          {viewMode === "analytics" ? (
+            <div className="panel__section">
+              <Analytics />
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="panel__section">
+                <Canvas
+                  filteredItems={
+                    useAdvancedFilters
+                      ? (filteredPeople as (Person | Activity)[])
+                      : (filteredItems as (Person | Activity)[])
+                  }
+                  highlightedIds={
+                    useAdvancedFilters ? highlightedIds : undefined
+                  }
+                />
+              </div>
+
+              <div className="panel__section">
+                <h2>Details</h2>
+                <DetailPanel onEdit={handleEditPerson} />
+                <Statistics />
+                <div className="legend">
+                  <span className="legend__title">Categories</span>
+                  <span className="legend__item legend__item--jy">JY</span>
+                  <span className="legend__item legend__item--cc">CC</span>
+                  <span className="legend__item legend__item--youth">
+                    Youth
+                  </span>
+                  <span className="legend__item legend__item--parents">
+                    Parents
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
 
           <Tools />
         </section>
@@ -400,6 +447,11 @@ const AppContent: React.FC = () => {
       <FamilyModal
         isOpen={isFamilyModalOpen}
         onClose={() => setIsFamilyModalOpen(false)}
+      />
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
       />
     </div>
   );

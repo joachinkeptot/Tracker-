@@ -8,6 +8,8 @@ import {
   EmploymentStatus,
   ParticipationStatus,
   ActivityType,
+  RuhiBookCompletion,
+  JYTextCompletion,
 } from "./types";
 
 interface ItemModalProps {
@@ -29,13 +31,15 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [itemType, setItemType] = useState<"people" | "activities">("people");
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
-  const [note, setNote] = useState("");
+  const [notes, setNotes] = useState("");
 
   // Person fields
   const [categories, setCategories] = useState<Category[]>([]);
   const [connectedActivities, setConnectedActivities] = useState<string[]>([]);
-  const [jyTexts, setJyTexts] = useState<string[]>([]);
-  const [studyCircleBooks, setStudyCircleBooks] = useState("");
+  const [jyTexts, setJyTexts] = useState<JYTextCompletion[]>([]);
+  const [studyCircleBooks, setStudyCircleBooks] = useState<
+    RuhiBookCompletion[]
+  >([]);
   const [ruhiLevel, setRuhiLevel] = useState<number>(0);
   const [familyId, setFamilyId] = useState<string>("");
   const [ageGroup, setAgeGroup] = useState<AgeGroup>("adult");
@@ -56,16 +60,16 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         setItemType("people");
         setName(person.name);
         setArea(person.area);
-        setNote(person.note);
+        setNotes(person.notes || "");
         setCategories(person.categories);
         setConnectedActivities(person.connectedActivities);
-        setJyTexts(person.jyTextsCompleted);
-        setStudyCircleBooks(person.studyCircleBooks);
+        setJyTexts(person.jyTexts || []);
+        setStudyCircleBooks(person.studyCircleBooks || []);
         setRuhiLevel(person.ruhiLevel);
         setFamilyId(person.familyId || "");
         setAgeGroup(person.ageGroup);
         setSchoolName(person.schoolName || "");
-        setEmploymentStatus(person.employmentStatus);
+        setEmploymentStatus(person.employmentStatus || "student");
         setParticipationStatus(person.participationStatus);
       }
     } else {
@@ -77,11 +81,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({
     setItemType("people");
     setName("");
     setArea("");
-    setNote("");
+    setNotes("");
     setCategories([]);
     setConnectedActivities([]);
     setJyTexts([]);
-    setStudyCircleBooks("");
+    setStudyCircleBooks([]);
     setRuhiLevel(0);
     setFamilyId("");
     setAgeGroup("adult");
@@ -101,21 +105,24 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       const personData: Omit<Person, "id"> = {
         name: name.trim(),
         area: area.trim(),
-        note: note.trim(),
+        notes: notes.trim() || undefined,
         categories: categories.length ? categories : [],
-        position: null,
         connectedActivities,
-        jyTextsCompleted: jyTexts,
-        studyCircleBooks: studyCircleBooks.trim(),
+        jyTexts: jyTexts || [],
+        studyCircleBooks: studyCircleBooks || [],
+        ccGrades: [],
         ruhiLevel,
-        familyId: familyId || null,
+        familyId: familyId || undefined,
         ageGroup,
-        schoolName: schoolName.trim() || null,
-        employmentStatus,
+        schoolName: schoolName.trim() || undefined,
+        employmentStatus: (employmentStatus || "student") as EmploymentStatus,
         participationStatus,
         homeVisits: [],
         conversations: [],
         connections: [],
+        dateAdded: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        position: { x: Math.random() * 700, y: Math.random() * 400 },
       };
 
       if (editingPersonId) {
@@ -132,9 +139,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       const activityData: Omit<Activity, "id"> = {
         name: name.trim(),
         type: activityType,
-        leader: leader.trim(),
-        note: note.trim(),
-        position: null,
+        leader: leader.trim() || undefined,
+        facilitator: leader.trim() || undefined,
+        notes: notes.trim() || undefined,
+        participantIds: [],
+        materials: undefined,
+        dateCreated: new Date().toISOString(),
+        lastModified: new Date().toISOString(),
+        position: { x: Math.random() * 700, y: Math.random() * 400 },
       };
 
       addActivity(activityData);
@@ -150,10 +162,21 @@ export const ItemModal: React.FC<ItemModalProps> = ({
     );
   };
 
-  const handleJyTextToggle = (text: string) => {
-    setJyTexts((prev) =>
-      prev.includes(text) ? prev.filter((t) => t !== text) : [...prev, text],
-    );
+  const handleJyTextToggle = (bookNum: number) => {
+    setJyTexts((prev) => {
+      const exists = prev.some((j) => j.bookNumber === bookNum);
+      if (exists) {
+        return prev.filter((j) => j.bookNumber !== bookNum);
+      } else {
+        return [
+          ...prev,
+          {
+            bookNumber: bookNum,
+            dateCompleted: new Date().toISOString(),
+          },
+        ];
+      }
+    });
   };
 
   if (!isOpen) return null;
@@ -343,8 +366,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                     <label key={num}>
                       <input
                         type="checkbox"
-                        checked={jyTexts.includes(`Book ${num}`)}
-                        onChange={() => handleJyTextToggle(`Book ${num}`)}
+                        checked={jyTexts.some((j) => j.bookNumber === num)}
+                        onChange={() => handleJyTextToggle(num)}
                       />
                       Book {num}
                     </label>
@@ -354,12 +377,38 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
               <div className="form-row">
                 <label className="muted">Study Circle Books</label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g., Ruhi Book 1, Book 2"
-                  value={studyCircleBooks}
-                  onChange={(e) => setStudyCircleBooks(e.target.value)}
-                />
+                <div className="chips" style={{ fontSize: "0.875rem" }}>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                    <label key={num}>
+                      <input
+                        type="checkbox"
+                        checked={studyCircleBooks.some(
+                          (b) => b.bookNumber === num,
+                        )}
+                        onChange={() => {
+                          setStudyCircleBooks((prev) => {
+                            const exists = prev.some(
+                              (b) => b.bookNumber === num,
+                            );
+                            if (exists) {
+                              return prev.filter((b) => b.bookNumber !== num);
+                            } else {
+                              return [
+                                ...prev,
+                                {
+                                  bookNumber: num,
+                                  bookName: `Ruhi Book ${num}`,
+                                  dateCompleted: new Date().toISOString(),
+                                },
+                              ];
+                            }
+                          });
+                        }}
+                      />
+                      Book {num}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="form-row">
@@ -401,7 +450,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                         ? "Animator name"
                         : activityType === "CC"
                           ? "Teacher name"
-                          : activityType === "StudyCircle"
+                          : activityType === "Study Circle"
                             ? "Tutor name"
                             : "Leader name"
                     }
@@ -417,8 +466,8 @@ export const ItemModal: React.FC<ItemModalProps> = ({
             <input
               type="text"
               placeholder="Notes (optional)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 

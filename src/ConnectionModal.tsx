@@ -65,12 +65,14 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({
     newConnectionsA.push({
       personId: selectedPersonB,
       connectionType,
-      strength,
+      strength: (strength > 3 ? 3 : strength < 1 ? 1 : strength) as 1 | 2 | 3,
+      dateAdded: new Date().toISOString(),
     });
     newConnectionsB.push({
       personId: selectedPersonA,
       connectionType,
-      strength,
+      strength: (strength > 3 ? 3 : strength < 1 ? 1 : strength) as 1 | 2 | 3,
+      dateAdded: new Date().toISOString(),
     });
 
     updatePerson(selectedPersonA, { connections: newConnectionsA });

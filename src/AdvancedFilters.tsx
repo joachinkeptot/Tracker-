@@ -60,8 +60,14 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     onFilterChange({ ...filters, [field]: newArray });
   };
 
-  const handleChange = (field: keyof AdvancedFilterState, value: any) => {
-    onFilterChange({ ...filters, [field]: value });
+  const handleChange = (
+    field: keyof AdvancedFilterState,
+    value: string | number | null | string[] | boolean,
+  ) => {
+    onFilterChange({
+      ...filters,
+      [field]: value as unknown as AdvancedFilterState[typeof field],
+    });
   };
 
   const clearAll = () => {
@@ -353,7 +359,7 @@ export const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
                             handleArrayToggle("connectedActivityTypes", type)
                           }
                         />
-                        {type === "StudyCircle" ? "Study Circle" : type}
+                        {type === "Study Circle" ? "Study Circle" : type}
                       </label>
                     ))}
                   </div>

@@ -24,31 +24,36 @@ export const loadFromLocalStorage = (): SerializableState | null => {
     const data = JSON.parse(raw) as SerializableState;
 
     // Migrate old data to new structure
-    const migratedPeople: Person[] = (data.people || []).map((person) => ({
-      ...person,
+    const migratedPeople: Person[] = (data.people || []).map((person: any) => ({
+      id: person.id,
+      name: person.name || "",
       area: person.area || "",
-      note: person.note || "",
+      notes: person.notes || person.note || "",
+      dateAdded: person.dateAdded || new Date().toISOString(),
+      lastModified: person.lastModified || new Date().toISOString(),
       categories: person.categories || ["Unassigned"],
       connectedActivities: person.connectedActivities || [],
-      jyTextsCompleted: person.jyTextsCompleted || [],
-      studyCircleBooks: person.studyCircleBooks || "",
+      jyTexts: person.jyTexts || person.jyTextsCompleted || [],
+      studyCircleBooks: person.studyCircleBooks || [],
+      ccGrades: person.ccGrades || [],
       ruhiLevel: person.ruhiLevel || 0,
-      // New fields with defaults
-      familyId: person.familyId || null,
-      ageGroup: person.ageGroup || "adult",
-      schoolName: person.schoolName || null,
-      employmentStatus: person.employmentStatus || "employed",
-      participationStatus: person.participationStatus || "active",
       homeVisits: person.homeVisits || [],
       conversations: person.conversations || [],
       connections: person.connections || [],
+      participationStatus: person.participationStatus || "active",
+      // New fields with defaults
+      familyId: person.familyId ?? undefined,
+      ageGroup: person.ageGroup || "adult",
+      schoolName: person.schoolName || undefined,
+      employmentStatus: person.employmentStatus || "employed",
+      position: person.position,
     }));
 
     const migratedActivities: Activity[] = (data.activities || []).map(
       (activity) => ({
         ...activity,
-        leader: activity.leader || "",
-        note: activity.note || "",
+        leader: activity.leader || activity.facilitator || "",
+        notes: activity.notes || activity.note || "",
       }),
     );
 

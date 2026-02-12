@@ -27,19 +27,24 @@ export const Tools: React.FC = () => {
       const activityNames = person.connectedActivities
         .map((id) => activities.find((a) => a.id === id)?.name || id)
         .join("|");
-      const jyTexts = person.jyTextsCompleted.join("|");
+      const jyTexts = (person.jyTexts || [])
+        .map((j) => (typeof j === "string" ? j : `Book ${j.bookNumber}`))
+        .join("|");
       const familyName = person.familyId
         ? families.find((f) => f.id === person.familyId)?.familyName || ""
         : "";
+      const studyCircles = (person.studyCircleBooks || [])
+        .map((b) => b.bookName || `Book ${b.bookNumber}`)
+        .join("|");
 
       const row = [
         person.name,
         person.area,
-        person.note,
+        person.notes || "",
         categoriesText,
         activityNames,
         jyTexts,
-        person.studyCircleBooks,
+        studyCircles,
         person.ruhiLevel,
         person.familyId || "",
         familyName,

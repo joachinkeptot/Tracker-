@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "./AppContext";
-import { HomeVisit, Conversation } from "./types";
+import { HomeVisit, Conversation, VisitPurpose } from "./types";
 
 interface DetailPanelProps {
   onEdit?: (id: string) => void;
@@ -21,16 +21,16 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ onEdit }) => {
   const [showHomeVisitForm, setShowHomeVisitForm] = useState(false);
   const [hvDate, setHvDate] = useState("");
   const [hvVisitors, setHvVisitors] = useState("");
-  const [hvPurpose, setHvPurpose] = useState("");
+  const [hvPurpose, setHvPurpose] = useState<VisitPurpose | "">("");
   const [hvNotes, setHvNotes] = useState("");
   const [hvFollowUp, setHvFollowUp] = useState("");
 
   // Conversation form state
   const [showConversationForm, setShowConversationForm] = useState(false);
   const [convDate, setConvDate] = useState("");
-  const [convTopic, setConvTopic] = useState("");
-  const [convNotes, setConvNotes] = useState("");
-  const [convNextSteps, setConvNextSteps] = useState("");
+  const [convTopic, setConvTopic] = useState<string>("");
+  const [convNotes, setConvNotes] = useState<string>("");
+  const [convNextSteps, setConvNextSteps] = useState<string>("");
 
   const handleAddHomeVisit = (personId: string) => {
     if (!hvDate) {
@@ -39,12 +39,14 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ onEdit }) => {
     }
 
     const newHomeVisit: HomeVisit = {
-      date: hvDate,
-      visitors: hvVisitors
+      date: hvDate || new Date().toISOString().split("T")[0],
+      visitors: (hvVisitors || "")
         .split(",")
         .map((v) => v.trim())
         .filter(Boolean),
-      notes: hvNotes.trim() || undefined,
+      purpose: (hvPurpose as VisitPurpose) || "Social",
+      notes: hvNotes.trim(),
+      completed: false,
       followUp: hvFollowUp || undefined,
     };
 
@@ -73,7 +75,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ onEdit }) => {
     const newConversation: Conversation = {
       date: convDate,
       topic: convTopic.trim(),
-      notes: convNotes.trim() || undefined,
+      notes: convNotes.trim(),
       nextSteps: convNextSteps.trim() || undefined,
     };
 
@@ -156,16 +158,28 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ onEdit }) => {
           <strong>Conversations:</strong> {conversationsCount}
         </p>
         <p>
-          <strong>JY Texts:</strong> {person.jyTextsCompleted.join(", ") || "-"}
+          <strong>JY Texts:</strong>{" "}
+          {person.jyTexts && person.jyTexts.length > 0
+            ? person.jyTexts
+                .map((j) =>
+                  typeof j === "string" ? j : `Book ${j.bookNumber}`,
+                )
+                .join(", ")
+            : "-"}
         </p>
         <p>
-          <strong>Study Circles:</strong> {person.studyCircleBooks || "-"}
+          <strong>Study Circles:</strong>{" "}
+          {person.studyCircleBooks && person.studyCircleBooks.length > 0
+            ? person.studyCircleBooks
+                .map((b) => b.bookName || `Book ${b.bookNumber}`)
+                .join(", ")
+            : "-"}
         </p>
         <p>
           <strong>Ruhi Level:</strong> {person.ruhiLevel}
         </p>
         <p>
-          <strong>Notes:</strong> {person.note || "-"}
+          <strong>Notes:</strong> {person.notes || "-"}
         </p>
 
         <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
@@ -245,7 +259,9 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ onEdit }) => {
               <div className="form-row" style={{ marginBottom: "0.5rem" }}>
                 <select
                   value={hvPurpose}
-                  onChange={(e) => setHvPurpose(e.target.value)}
+                  onChange={(e) =>
+                    setHvPurpose(e.target.value as VisitPurpose | "")
+                  }
                   style={{ fontSize: "0.875rem" }}
                 >
                   <option value="">Purpose (optional)</option>
@@ -291,7 +307,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ onEdit }) => {
                 .reverse()
                 .map((visit, idx) => (
                   <div
-                    key={idx}
+                    key={`home-visit-${person.homeVisits.length - idx - 1}-${visit.date}`}
                     style={{
                       background: "#111827",
                       padding: "0.5rem",
@@ -414,7 +430,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({ onEdit }) => {
                 .reverse()
                 .map((conv, idx) => (
                   <div
-                    key={idx}
+                    key={`conversation-${person.conversations.length - idx - 1}-${conv.date}`}
                     style={{
                       background: "#111827",
                       padding: "0.5rem",

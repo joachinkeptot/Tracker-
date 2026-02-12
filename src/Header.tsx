@@ -6,12 +6,14 @@ interface HeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddItem: () => void;
+  onImport: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   searchQuery,
   onSearchChange,
   onAddItem,
+  onImport,
 }) => {
   const {
     viewMode,
@@ -59,6 +61,13 @@ export const Header: React.FC<HeaderProps> = ({
         >
           Activities
         </button>
+        <button
+          className={`tab ${viewMode === "analytics" ? "tab--active" : ""}`}
+          onClick={() => handleViewChange("analytics")}
+          role="tab"
+        >
+          Analytics
+        </button>
       </div>
       <div className="board__actions">
         {viewMode === "cohorts" && (
@@ -88,6 +97,14 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <button className="fab" aria-label="Add" onClick={onAddItem}>
           +
+        </button>
+        <button
+          className="btn btn--sm"
+          aria-label="Import CSV"
+          onClick={onImport}
+          title="Import data from CSV"
+        >
+          📥 Import
         </button>
       </div>
     </div>

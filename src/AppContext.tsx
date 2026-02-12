@@ -143,7 +143,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const deleteFamily = (id: string) => {
     // Unlink people from this family
     setPeople((prev) =>
-      prev.map((p) => (p.familyId === id ? { ...p, familyId: null } : p)),
+      prev.map((p) => (p.familyId === id ? { ...p, familyId: undefined } : p)),
     );
     setFamilies((prev) => prev.filter((f) => f.id !== id));
   };

@@ -29,7 +29,8 @@ export const Statistics: React.FC = () => {
       primaryArea: primaryArea.trim(),
       phone: phone.trim(),
       email: email.trim(),
-      notes: notes.trim(),
+      notes: notes.trim() || undefined,
+      dateAdded: new Date().toISOString(),
     });
 
     alert(`Family "${familyName.trim()}" added successfully!`);

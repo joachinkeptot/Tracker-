@@ -27,8 +27,8 @@ export const FamilyModal: React.FC<FamilyModalProps> = ({
       if (family) {
         setFamilyName(family.familyName);
         setPrimaryArea(family.primaryArea);
-        setPhone(family.phone);
-        setEmail(family.email);
+        setPhone(family.phone || "");
+        setEmail(family.email || "");
         setNotes(family.notes || "");
       }
     } else {
@@ -55,9 +55,10 @@ export const FamilyModal: React.FC<FamilyModalProps> = ({
     const familyData: Omit<Family, "id"> = {
       familyName: familyName.trim(),
       primaryArea: primaryArea.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      notes: notes.trim(),
+      phone: phone.trim() || "",
+      email: email.trim() || "",
+      notes: notes.trim() || undefined,
+      dateAdded: new Date().toISOString(),
     };
 
     if (editingFamilyId) {
