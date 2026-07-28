@@ -9,7 +9,6 @@ interface ComputedViewsResult {
   pagedPeople: Person[];
   pagedActivities: Activity[];
   pagedFamilies: Family[];
-  cohortGroups: Array<[string, Person[]]>;
   quickStats: {
     totalPeople: number;
     totalActivities: number;
@@ -23,7 +22,7 @@ const ITEMS_PER_PAGE = 50;
 
 /**
  * Hook for computing view-related data
- * Handles pagination, cohorts, and quick stats
+ * Handles pagination and quick stats
  */
 export const useComputedViews = (
   people: Person[],
@@ -73,34 +72,6 @@ export const useComputedViews = (
     [visibleFamilies, pageStart, pageEnd],
   );
 
-  const cohortGroups = useMemo(() => {
-    const groups = new Map<string, Person[]>();
-    const unassigned: Person[] = [];
-
-    visiblePeople.forEach((person) => {
-      const cohorts = person.cohorts || [];
-      if (cohorts.length === 0) {
-        unassigned.push(person);
-        return;
-      }
-      cohorts.forEach((cohort) => {
-        if (!groups.has(cohort)) {
-          groups.set(cohort, []);
-        }
-        const groupArray = groups.get(cohort);
-        if (groupArray) {
-          groupArray.push(person);
-        }
-      });
-    });
-
-    if (unassigned.length > 0) {
-      groups.set("Unassigned", unassigned);
-    }
-
-    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [visiblePeople]);
-
   const quickStats = useMemo(() => {
     const totalPeople = people.length;
     const totalActivities = activities.length;
@@ -130,7 +101,6 @@ export const useComputedViews = (
     pagedPeople,
     pagedActivities,
     pagedFamilies,
-    cohortGroups,
     quickStats,
   };
 };

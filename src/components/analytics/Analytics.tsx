@@ -5,7 +5,6 @@ import { MetricsCard } from "./MetricsCard";
 import { AgeGroupBreakdown } from "./AgeGroupBreakdown";
 import { ActivityBreakdown } from "./ActivityBreakdown";
 import { ConnectionStats } from "./ConnectionStats";
-import { EngagementStats } from "./EngagementStats";
 import { LearningProgress } from "./LearningProgress";
 import { AreaBreakdown } from "./AreaBreakdown";
 import { GrowthOverTime } from "./GrowthOverTime";
@@ -72,15 +71,6 @@ const AnalyticsContent: React.FC = memo(() => {
             total={metrics.totalPeople}
           />
         </MetricsCard>
-      </div>
-
-      {/* Engagement Section */}
-      <div className="analytics__section">
-        <h3>📝 Engagement</h3>
-        <EngagementStats
-          totalHomeVisits={metrics.totalHomeVisits}
-          totalConversations={metrics.totalConversations}
-        />
       </div>
 
       {/* Learning Progress Section */}

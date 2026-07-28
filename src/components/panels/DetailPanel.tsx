@@ -35,9 +35,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
     if (!family)
       return <div className="detail">Select a node to see details.</div>;
 
-    const members = people.filter(
-      (p) => p.familyId === family.id || p.familyId === family.familyName,
-    );
+    const members = people.filter((p) => p.familyId === family.id);
 
     return (
       <div className="detail">

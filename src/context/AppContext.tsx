@@ -11,29 +11,17 @@ import {
   Person,
   Activity,
   Family,
-  ProgramEvent,
-  LearningObject,
-  Reflection,
   SelectedItem,
   ViewMode,
-  CohortViewMode,
   Position,
   SavedQuery,
 } from "../types";
 import { generateId, saveToLocalStorage, loadFromLocalStorage } from "../utils";
+import { usePeopleState } from "./usePeopleState";
+import { useActivitiesState } from "./useActivitiesState";
+import { useFamiliesState } from "./useFamiliesState";
 
 interface AppContextType extends AppState {
-  addProgramEvent: (event: Omit<ProgramEvent, "id">) => void;
-  updateProgramEvent: (id: string, event: Partial<ProgramEvent>) => void;
-  deleteProgramEvent: (id: string) => void;
-  addLearningObject: (obj: Omit<LearningObject, "id">) => void;
-  updateLearningObject: (id: string, obj: Partial<LearningObject>) => void;
-  deleteLearningObject: (id: string) => void;
-  addReflection: (
-    reflection: Omit<Reflection, "id" | "dateCreated" | "lastModified">,
-  ) => void;
-  updateReflection: (id: string, reflection: Partial<Reflection>) => void;
-  deleteReflection: (id: string) => void;
   addPerson: (person: Omit<Person, "id">) => void;
   updatePerson: (id: string, person: Partial<Person>) => void;
   deletePerson: (id: string) => void;
@@ -47,12 +35,10 @@ interface AppContextType extends AppState {
   deleteSavedQuery: (id: string) => void;
   setSelected: (selected: SelectedItem) => void;
   setViewMode: (mode: ViewMode) => void;
-  setCohortViewMode: (mode: CohortViewMode) => void;
   setShowConnections: (show: boolean) => void;
   updatePersonPosition: (id: string, position: Position) => void;
   updateActivityPosition: (id: string, position: Position) => void;
   updateAreaNickname: (area: string, nickname: string) => void;
-  setCalendarUrl: (url: string) => void;
   importData: (data: {
     people?: Person[];
     activities?: Activity[];
@@ -76,12 +62,9 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [people, setPeople] = useState<Person[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [families, setFamilies] = useState<Family[]>([]);
-  const [programEvents, setProgramEvents] = useState<ProgramEvent[]>([]);
-  const [learningObjects, setLearningObjects] = useState<LearningObject[]>([]);
-  const [reflections, setReflections] = useState<Reflection[]>([]);
+  const peopleState = usePeopleState();
+  const activitiesState = useActivitiesState();
+  const familiesState = useFamiliesState();
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
   const [selected, setSelectedState] = useState<SelectedItem>({
     type: "people",
@@ -91,12 +74,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     new Map(),
   );
   const [viewMode, setViewModeState] = useState<ViewMode>("people");
-  const [cohortViewMode, setCohortViewModeState] =
-    useState<CohortViewMode>("categories");
   const [showConnections, setShowConnectionsState] = useState<boolean>(false);
   const [areaNicknames, setAreaNicknames] = useState<Record<string, string>>({});
-  const [calendarUrl, setCalendarUrlState] = useState<string>("");
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { people, setPeople } = peopleState;
+  const { activities, setActivities } = activitiesState;
+  const { families, setFamilies } = familiesState;
 
   // Load initial data
   useEffect(() => {
@@ -105,19 +89,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setPeople(savedData.people);
       setActivities(savedData.activities);
       setFamilies(savedData.families);
-      setProgramEvents(savedData.programEvents || []);
-      setLearningObjects(savedData.learningObjects || []);
-      setReflections(savedData.reflections || []);
       setSavedQueries(savedData.savedQueries || []);
       setSelectedState(savedData.selected);
       setGroupPositions(new Map(Object.entries(savedData.groupPositions)));
       setViewModeState(savedData.viewMode || "people");
-      setCohortViewModeState(savedData.cohortViewMode || "categories");
       setShowConnectionsState(savedData.showConnections ?? false);
       setAreaNicknames(savedData.areaNicknames || {});
-      setCalendarUrlState(savedData.calendarUrl || "");
     }
     setIsLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Save data on changes (only after initial load) — debounced to avoid thrashing
@@ -137,17 +117,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           people,
           activities,
           families,
-          programEvents,
-          learningObjects,
-          reflections,
           savedQueries,
           selected,
           groupPositions: Object.fromEntries(groupPositions),
           viewMode,
-          cohortViewMode,
           showConnections,
           areaNicknames,
-          calendarUrl,
         };
         saveToLocalStorage(state);
       } catch (error) {
@@ -169,123 +144,26 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     people,
     activities,
     families,
-    programEvents,
-    learningObjects,
-    reflections,
     savedQueries,
     selected,
     groupPositions,
     viewMode,
-    cohortViewMode,
     showConnections,
     areaNicknames,
-    calendarUrl,
   ]);
 
-  const addProgramEvent = (event: Omit<ProgramEvent, "id">) => {
-    const newEvent: ProgramEvent = { ...event, id: generateId() };
-    setProgramEvents((prev) => [...prev, newEvent]);
-  };
-
-  const updateProgramEvent = (id: string, updates: Partial<ProgramEvent>) => {
-    setProgramEvents((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, ...updates } : e)),
-    );
-  };
-
-  const deleteProgramEvent = (id: string) => {
-    setProgramEvents((prev) => prev.filter((e) => e.id !== id));
-  };
-
-  const addLearningObject = (obj: Omit<LearningObject, "id">) => {
-    setLearningObjects((prev) => [...prev, { ...obj, id: generateId() }]);
-  };
-
-  const updateLearningObject = (
-    id: string,
-    updates: Partial<LearningObject>,
-  ) => {
-    setLearningObjects((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, ...updates } : o)),
-    );
-  };
-
-  const deleteLearningObject = (id: string) => {
-    setLearningObjects((prev) => prev.filter((o) => o.id !== id));
-  };
-
-  const addReflection = (
-    reflection: Omit<Reflection, "id" | "dateCreated" | "lastModified">,
-  ) => {
-    const now = new Date().toISOString();
-    const newReflection: Reflection = {
-      ...reflection,
-      id: generateId(),
-      dateCreated: now,
-      lastModified: now,
-    };
-    setReflections((prev) => [...prev, newReflection]);
-  };
-
-  const updateReflection = (id: string, updates: Partial<Reflection>) => {
-    const now = new Date().toISOString();
-    setReflections((prev) =>
-      prev.map((r) =>
-        r.id === id ? { ...r, ...updates, lastModified: now } : r,
-      ),
-    );
-  };
-
-  const deleteReflection = (id: string) => {
-    setReflections((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const addPerson = (person: Omit<Person, "id">) => {
-    const newPerson: Person = { ...person, id: generateId() };
-    setPeople((prev) => [...prev, newPerson]);
-  };
-
-  const updatePerson = (id: string, updates: Partial<Person>) => {
-    setPeople((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-    );
-  };
-
   const deletePerson = (id: string) => {
-    setPeople((prev) => prev.filter((p) => p.id !== id));
+    peopleState.deletePerson(id);
     if (selected.type === "people" && selected.id === id) {
       setSelectedState({ type: "people", id: null });
     }
   };
 
-  const addActivity = (activity: Omit<Activity, "id">) => {
-    const newActivity: Activity = { ...activity, id: generateId() };
-    setActivities((prev) => [...prev, newActivity]);
-    return newActivity.id;
-  };
-
-  const updateActivity = (id: string, updates: Partial<Activity>) => {
-    setActivities((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, ...updates } : a)),
-    );
-  };
-
   const deleteActivity = (id: string) => {
-    setActivities((prev) => prev.filter((a) => a.id !== id));
+    activitiesState.deleteActivity(id);
     if (selected.type === "activities" && selected.id === id) {
       setSelectedState({ type: "activities", id: null });
     }
-  };
-
-  const addFamily = (family: Omit<Family, "id">) => {
-    const newFamily: Family = { ...family, id: generateId() };
-    setFamilies((prev) => [...prev, newFamily]);
-  };
-
-  const updateFamily = (id: string, updates: Partial<Family>) => {
-    setFamilies((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, ...updates } : f)),
-    );
   };
 
   const deleteFamily = (id: string) => {
@@ -293,7 +171,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setPeople((prev) =>
       prev.map((p) => (p.familyId === id ? { ...p, familyId: undefined } : p)),
     );
-    setFamilies((prev) => prev.filter((f) => f.id !== id));
+    familiesState.deleteFamily(id);
   };
 
   const addSavedQuery = (query: Omit<SavedQuery, "id">) => {
@@ -317,24 +195,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setViewModeState(mode);
   };
 
-  const setCohortViewMode = (mode: CohortViewMode) => {
-    setCohortViewModeState(mode);
-  };
-
   const setShowConnections = (show: boolean) => {
     setShowConnectionsState(show);
-  };
-
-  const updatePersonPosition = (id: string, position: Position) => {
-    setPeople((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, position } : p)),
-    );
-  };
-
-  const updateActivityPosition = (id: string, position: Position) => {
-    setActivities((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, position } : a)),
-    );
   };
 
   const updateAreaNickname = (area: string, nickname: string) => {
@@ -346,10 +208,6 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       }
       return { ...prev, [area]: nickname.trim() };
     });
-  };
-
-  const setCalendarUrl = (url: string) => {
-    setCalendarUrlState(url);
   };
 
   const importData = (data: {
@@ -366,45 +224,29 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     people,
     activities,
     families,
-    programEvents,
-    learningObjects,
-    reflections,
     savedQueries,
     selected,
     groupPositions,
     viewMode,
-    cohortViewMode,
     showConnections,
     areaNicknames,
-    calendarUrl,
-    setCalendarUrl,
     updateAreaNickname,
-    addPerson,
-    updatePerson,
+    addPerson: peopleState.addPerson,
+    updatePerson: peopleState.updatePerson,
     deletePerson,
-    addActivity,
-    updateActivity,
+    addActivity: activitiesState.addActivity,
+    updateActivity: activitiesState.updateActivity,
     deleteActivity,
-    addFamily,
-    updateFamily,
+    addFamily: familiesState.addFamily,
+    updateFamily: familiesState.updateFamily,
     deleteFamily,
-    addProgramEvent,
-    updateProgramEvent,
-    deleteProgramEvent,
-    addLearningObject,
-    updateLearningObject,
-    deleteLearningObject,
-    addReflection,
-    updateReflection,
-    deleteReflection,
     addSavedQuery,
     deleteSavedQuery,
     setSelected,
     setViewMode,
-    setCohortViewMode,
     setShowConnections,
-    updatePersonPosition,
-    updateActivityPosition,
+    updatePersonPosition: peopleState.updatePersonPosition,
+    updateActivityPosition: activitiesState.updateActivityPosition,
     importData,
   };
 

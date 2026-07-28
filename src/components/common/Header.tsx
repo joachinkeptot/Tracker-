@@ -18,8 +18,6 @@ export const Header: React.FC<HeaderProps> = ({
   const {
     viewMode,
     setViewMode,
-    cohortViewMode,
-    setCohortViewMode,
     showConnections,
     setShowConnections,
     people,
@@ -31,12 +29,6 @@ export const Header: React.FC<HeaderProps> = ({
     setViewMode(mode);
   };
 
-  const toggleCohortView = () => {
-    setCohortViewMode(
-      cohortViewMode === "categories" ? "groups" : "categories",
-    );
-  };
-
   return (
     <div className="panel__section board__header">
       <div className="tabs" role="tablist">
@@ -46,13 +38,6 @@ export const Header: React.FC<HeaderProps> = ({
           role="tab"
         >
           People
-        </button>
-        <button
-          className={`tab ${viewMode === "cohorts" ? "tab--active" : ""}`}
-          onClick={() => handleViewChange("cohorts")}
-          role="tab"
-        >
-          Cohorts
         </button>
         <button
           className={`tab ${viewMode === "families" ? "tab--active" : ""}`}
@@ -69,20 +54,6 @@ export const Header: React.FC<HeaderProps> = ({
           Activities
         </button>
         <button
-          className={`tab ${viewMode === "forms" ? "tab--active" : ""}`}
-          onClick={() => handleViewChange("forms")}
-          role="tab"
-        >
-          Forms
-        </button>
-        <button
-          className={`tab ${viewMode === "programs" ? "tab--active" : ""}`}
-          onClick={() => handleViewChange("programs")}
-          role="tab"
-        >
-          Programs
-        </button>
-        <button
           className={`tab ${viewMode === "analytics" ? "tab--active" : ""}`}
           onClick={() => handleViewChange("analytics")}
           role="tab"
@@ -90,26 +61,16 @@ export const Header: React.FC<HeaderProps> = ({
           Analytics
         </button>
         <button
-          className={`tab ${viewMode === "map" ? "tab--active" : ""}`}
-          onClick={() => handleViewChange("map")}
+          className={`tab ${viewMode === "circles" ? "tab--active" : ""}`}
+          onClick={() => handleViewChange("circles")}
           role="tab"
         >
-          Map
-        </button>
-        <button
-          className={`tab ${viewMode === "calendar" ? "tab--active" : ""}`}
-          onClick={() => handleViewChange("calendar")}
-          role="tab"
-        >
-          Calendar
+          Circles
         </button>
       </div>
       <div className="board__actions">
-        {viewMode === "cohorts" && (
+        {viewMode !== "analytics" && viewMode !== "circles" && (
           <>
-            <button className="btn btn--sm" onClick={toggleCohortView}>
-              View: {cohortViewMode === "categories" ? "Categories" : "Groups"}
-            </button>
             <button className="btn btn--sm" onClick={onAddConnection}>
               + Add Connection
             </button>

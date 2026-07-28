@@ -282,22 +282,13 @@ export const loadFromLocalStorage = (): SerializableState | null => {
       people: migratedPeople,
       activities: migratedActivities,
       families: migratedFamilies,
-      programEvents: data.programEvents || [],
-      learningObjects: data.learningObjects || [],
-      reflections: data.reflections || [],
-      attendanceRecords: data.attendanceRecords || [],
       savedQueries: data.savedQueries || [],
       selected: data.selected || { type: "people", id: null },
       groupPositions: data.groupPositions || {},
       canvasPositions: data.canvasPositions,
       showConnections: data.showConnections ?? false,
-      cohortViewMode:
-        ((data.cohortViewMode as string) === "families"
-          ? "groups"
-          : data.cohortViewMode) ?? "categories",
       viewMode: data.viewMode ?? "people",
       areaNicknames: (data.areaNicknames as Record<string, string>) || {},
-      calendarUrl: typeof data.calendarUrl === "string" ? data.calendarUrl : "",
     };
   } catch (error) {
     console.error("Failed to load from localStorage:", error);

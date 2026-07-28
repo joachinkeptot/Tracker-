@@ -6,7 +6,6 @@ export {
   toNumber,
   safePercentage,
 } from "./dataValidation";
-export { FuzzyMatcher } from "./fuzzyMatcher";
 export { JY_TEXTS, ALL_JY_TEXTS } from "./jyTexts";
 export {
   validateEmail,

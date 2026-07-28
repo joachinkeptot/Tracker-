@@ -182,109 +182,16 @@ export interface ActivityReflection {
   text: string;
 }
 
-// Attendance Log (for detailed tracking)
-export interface AttendanceRecord {
-  id: string; // UUID
-  activityId: string; // Which activity
-  date: string; // ISO 8601 date
-  attendees: string[]; // Array of Person IDs who attended
-  newAttendees?: string[]; // First-timers (Person IDs)
-  facilitator?: string; // Who led the session
-  materialsCovered?: string; // What was studied/discussed
-  highlights?: string; // Notes about the session
-  totalCount: number; // Number of attendees
-}
-
 // ============================================================================
 // UI & APPLICATION STATE
 // ============================================================================
 
-export type ReflectionType =
-  | "meeting"
-  | "call"
-  | "one-on-one"
-  | "team"
-  | "other";
-
-export interface Reflection {
-  id: string; // UUID
-  title: string; // Brief title of the reflection
-  type: ReflectionType; // Type of interaction
-  date: string; // ISO 8601 date
-  attendees?: string[]; // Names of people involved
-  personIds?: string[]; // IDs of connected people from the database
-  notes: string; // Detailed reflection text
-  keyTakeaways?: string; // Main points/learnings
-  nextSteps?: string; // Action items
-  followUpDate?: string; // When to reconnect
-  tags?: string[]; // Custom tags for organization
-  dateCreated: string; // ISO 8601 timestamp
-  lastModified: string; // ISO 8601 timestamp
-}
-
 export type ViewMode =
   | "people"
-  | "cohorts"
   | "families"
   | "activities"
   | "analytics"
-  | "forms"
-  | "programs"
-  | "map"
-  | "calendar";
-
-// ============================================================================
-// PROGRAMS — Children's Festivals, JY Intensives, Study Circles
-// ============================================================================
-
-export type ProgramKind = "children-festival" | "jy-intensive" | "study-circle";
-
-export type ProgramStatus = "planned" | "ongoing" | "completed" | "cancelled";
-
-export interface ProgramTeamMember {
-  personId?: string; // optional link to a Person in the db
-  name: string;
-  role?: string; // e.g. "Coordinator", "Tutor", "Animator"
-}
-
-export interface ProgramNote {
-  id: string;
-  date: string; // ISO 8601
-  text: string;
-}
-
-export interface ProgramEvent {
-  id: string;
-  kind: ProgramKind;
-  title: string;
-  date: string; // primary event date (ISO 8601)
-  endDate?: string; // optional end date for multi-day events
-  location?: string;
-  status: ProgramStatus;
-  team: ProgramTeamMember[];
-  reflections: string; // free-form reflection block
-  trackingNotes: ProgramNote[]; // timestamped tracking log
-  dateAdded: string; // ISO 8601, used for sort order
-}
-
-// Objects of Learning
-export type LearningObjectStatus = "active" | "completed";
-
-export interface LearningObject {
-  id: string;
-  statement: string; // e.g. "We are learning how to raise capacity for..."
-  notes?: string;
-  status: LearningObjectStatus;
-  dateAdded: string; // ISO 8601
-}
-
-/**
- * How to display/organize cohorts within the cohorts view
- * - "categories": Group by cohort categories
- * - "groups": Group by family connections/groupings
- * Note: This is different from ViewMode: "families" which shows Family entities
- */
-export type CohortViewMode = "categories" | "groups";
+  | "circles";
 
 // Selected item state
 export interface SelectedItem {
@@ -303,21 +210,14 @@ export interface AppState {
   families: Family[];
   people: Person[];
   activities: Activity[];
-  programEvents: ProgramEvent[];
-  learningObjects: LearningObject[];
-  reflections: Reflection[];
-  attendanceRecords?: AttendanceRecord[];
 
   // UI State
   selected: SelectedItem;
   viewMode: ViewMode;
-  cohortViewMode: CohortViewMode;
   showConnections: boolean;
 
   // Area nicknames: maps raw area string → friendly nickname
   areaNicknames: Record<string, string>;
-
-  calendarUrl: string;
 
   // Queries
   savedQueries: SavedQuery[];
@@ -377,19 +277,13 @@ export interface SerializableState {
   people: Person[];
   activities: Activity[];
   families: Family[];
-  programEvents?: ProgramEvent[];
-  learningObjects?: LearningObject[];
-  reflections?: Reflection[];
-  attendanceRecords?: AttendanceRecord[];
   selected: SelectedItem;
   canvasPositions?: CanvasPositions;
   groupPositions: { [key: string]: Position };
   savedQueries: SavedQuery[];
   viewMode?: ViewMode;
-  cohortViewMode?: CohortViewMode;
   showConnections?: boolean;
   areaNicknames?: Record<string, string>;
-  calendarUrl?: string;
 }
 
 // ============================================================================
@@ -406,193 +300,6 @@ export interface FormSubmission {
   data: any;
   processed: boolean;
   processedAt?: string;
-}
-
-// ============================================================================
-// CSV IMPORT TYPES (For import system)
-// ============================================================================
-
-export type ImportType = "person" | "family" | "homevisit";
-
-export interface ValidationError {
-  rowNumber: number;
-  columnName: string;
-  value: any;
-  severity: "error" | "warning"; // error: blocks import, warning: for review
-  message: string;
-}
-
-export interface ParsedRow {
-  rowNumber: number;
-  data: Record<string, any>;
-  errors: ValidationError[];
-}
-
-export interface CSVParseResult {
-  importType: ImportType;
-  rows: ParsedRow[];
-  columnMapping: Record<string, number>; // column name to index
-  headerRow: string[];
-  totalRows: number;
-  validRows: number;
-  errorRows: number;
-}
-
-export interface FuzzyMatch {
-  id: string;
-  name: string;
-  similarity: number; // 0-1 score
-}
-
-export interface PersonMatch {
-  personId: string;
-  personName: string;
-  area: string;
-  similarity: number;
-}
-
-export interface ActivityMatch {
-  activityId: string;
-  activityName: string;
-  type: ActivityType;
-  similarity: number;
-}
-
-export interface FamilyMatch {
-  familyId: string;
-  familyName: string;
-  area: string;
-  similarity: number;
-}
-
-export interface ColumnMapping {
-  csvColumn: string;
-  dataField: string;
-  required: boolean;
-  value?: any; // for manual override
-}
-
-export interface ImportMapping {
-  importType: ImportType;
-  columnMappings: ColumnMapping[];
-  personMatches: Map<string, PersonMatch>; // csvRowName -> match
-  activityMatches: Map<string, ActivityMatch>;
-  familyMatches: Map<string, FamilyMatch>;
-  manualMappings: Map<string, string>; // csv value -> system value
-}
-
-export interface ImportAction {
-  type: "create" | "update";
-  entityType: "person" | "activity" | "family";
-  entityId?: string;
-  data: any;
-  beforeData?: any; // for undo
-}
-
-export interface ImportSummary {
-  successCount: number;
-  warningCount: number;
-  errorCount: number;
-  created: {
-    people: number;
-    families: number;
-    activities: number;
-  };
-  updated: {
-    people: number;
-    families: number;
-    activities: number;
-  };
-  errors: Array<{
-    rowNumber: number;
-    entityName: string;
-    reason: string;
-  }>;
-  actions: ImportAction[];
-  timestamp: string;
-  backupId: string; // for undo functionality
-}
-
-export interface ImportBackup {
-  id: string;
-  timestamp: string;
-  people: Person[];
-  activities: Activity[];
-  families: Family[];
-  actions: ImportAction[];
-}
-
-// CSV Row types matching official schema column names
-export interface PersonIntakeRow {
-  timestamp?: string;
-  yourName: string;
-  personName: string;
-  familyName?: string;
-  area: string;
-  ageGroup: AgeGroup;
-  isParent?: boolean;
-  isElder?: boolean;
-  phone?: string;
-  email?: string;
-  schoolName?: string;
-  employmentStatus?: EmploymentStatus;
-  participationStatus?: ParticipationStatus;
-  cohorts?: string[];
-  connectedActivities?: string[];
-  ruhiLevel?: number;
-  ccGrades?: number[];
-  notes?: string;
-}
-
-export interface FamilyIntakeRow {
-  timestamp?: string;
-  familyName: string;
-  primaryArea?: string;
-  phone?: string;
-  email?: string;
-  notes?: string;
-  dateAdded?: string;
-  lastContact?: string;
-}
-
-export interface HomeVisitRow {
-  timestamp?: string;
-  visitors: string[];
-  familyOrPersonName: string;
-  area: string;
-  visitDate: string;
-  purpose: VisitPurpose;
-  conversationTopics: string;
-  relationshipsDiscovered?: string;
-  interestsExpressed?: string;
-  nextSteps?: string;
-  followUpDate?: string;
-  followUpCompleted?: boolean;
-}
-
-// Import result from full import process
-export interface ImportResult {
-  success: boolean;
-  summary: {
-    created: {
-      people: number;
-      families: number;
-      activities: number;
-    };
-    updated: {
-      people: number;
-      families: number;
-      activities: number;
-    };
-    errors: Array<{
-      row: number;
-      field?: string;
-      message: string;
-      suggestion?: string;
-    }>;
-  };
-  totalProcessed: number;
-  successRate: number; // 0-100
 }
 
 // Re-export analytics types for convenience

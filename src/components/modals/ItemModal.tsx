@@ -20,9 +20,10 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [itemType, setItemType] = useState<"people" | "activities">("people");
 
   useEffect(() => {
+    if (!isOpen) return;
     if (editingActivityId) setItemType("activities");
-    else if (editingPersonId) setItemType("people");
-  }, [editingPersonId, editingActivityId]);
+    else setItemType("people");
+  }, [isOpen, editingPersonId, editingActivityId]);
 
   if (!isOpen) return null;
 
