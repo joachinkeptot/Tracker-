@@ -1,91 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface CircleDef {
-  id: string;
-  name: string;
-  shortName: string;
-  definition: string;
-  fill: string;
-  fillSel: string;
-  stroke: string;
-}
-
-interface Period {
-  id: string;
-  label: string;
-  numbers: Record<string, number>;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Circle definitions — outer → inner
-// ─────────────────────────────────────────────────────────────────────────────
-
-const CIRCLES: CircleDef[] = [
-  {
-    id: "widest",
-    name: "Widest Circle",
-    shortName: "Neighborhood",
-    definition:
-      "Neighborhood total number — the broadest boundary of your community outreach.",
-    fill: "rgba(0, 212, 255, 0.06)",
-    fillSel: "rgba(0, 212, 255, 0.18)",
-    stroke: "#00d4ff",
-  },
-  {
-    id: "conversation",
-    name: "Conversation",
-    shortName: "Conversation",
-    definition:
-      "Anyone currently or previously interacting with the Word of God at any level — devotions, home visits, activities, coloring sheet, etc.",
-    fill: "rgba(20, 170, 255, 0.08)",
-    fillSel: "rgba(20, 170, 255, 0.20)",
-    stroke: "#14aaff",
-  },
-  {
-    id: "protagonists",
-    name: "Protagonists",
-    shortName: "Protagonists",
-    definition:
-      "Friends at any level who show a sense of ownership in the process — expanding to others, hosting devotionals, sharing coloring sheets, helping with festivals and home visits.",
-    fill: "rgba(80, 130, 255, 0.10)",
-    fillSel: "rgba(80, 130, 255, 0.22)",
-    stroke: "#5082ff",
-  },
-  {
-    id: "institute",
-    name: "Institute Participants",
-    shortName: "Institute",
-    definition:
-      "Anyone at any stage or mode in a class, group or study circle.",
-    fill: "rgba(130, 100, 255, 0.12)",
-    fillSel: "rgba(130, 100, 255, 0.24)",
-    stroke: "#8264ff",
-  },
-  {
-    id: "facilitating",
-    name: "Facilitating Education",
-    shortName: "Facilitating",
-    definition:
-      "Youth and Adults assisting or facilitating the educational programs at any stage or training level.",
-    fill: "rgba(160, 85, 247, 0.14)",
-    fillSel: "rgba(160, 85, 247, 0.26)",
-    stroke: "#a055f7",
-  },
-  {
-    id: "accompanying",
-    name: "Accompanying",
-    shortName: "Accompanying",
-    definition:
-      "Friends accompanying — the tutor/animator or tutor/teacher concept. Those guiding and mentoring others through the process.",
-    fill: "rgba(168, 85, 247, 0.20)",
-    fillSel: "rgba(168, 85, 247, 0.35)",
-    stroke: "#a855f7",
-  },
-];
+import React, { useCallback, useEffect, useState } from "react";
+import { CIRCLES, useCirclePeriods } from "./useCirclePeriods";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SVG geometry
@@ -110,53 +24,26 @@ function annularPath(cx: number, cy: number, ro: number, ri: number): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Period helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-function currentPeriodLabel(): string {
-  const d = new Date();
-  return `${d.getMonth() < 6 ? "H1" : "H2"} ${d.getFullYear()}`;
-}
-
-function mkPeriod(label: string): Period {
-  return {
-    id: `p${Date.now()}${Math.random().toString(36).slice(2, 5)}`,
-    label,
-    numbers: Object.fromEntries(CIRCLES.map((c) => [c.id, 0])),
-  };
-}
-
-const STORAGE_KEY = "cc-periods-v1";
-
-function loadPeriods(): Period[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as Period[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {}
-  return [mkPeriod(currentPeriodLabel())];
-}
-
-function savePeriods(p: Period[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 const CommunityCircles: React.FC = () => {
-  const [periods, setPeriods] = useState<Period[]>(loadPeriods);
-  const [activePId, setActivePId] = useState<string>(() => { const p = loadPeriods(); return p[p.length - 1]!.id; });
+  const {
+    periods,
+    activePId,
+    setActivePId,
+    activePeriod,
+    setNumber,
+    addPeriod,
+    removePeriod,
+  } = useCirclePeriods();
+
   const [selId, setSelId] = useState<string>(CIRCLES[0].id);
   const [hovId, setHovId] = useState<string | null>(null);
   const [addingP, setAddingP] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [editVal, setEditVal] = useState("0");
 
-  const activePeriod = periods.find((p) => p.id === activePId) ?? periods[periods.length - 1]!;
   const selCircle = CIRCLES.find((c) => c.id === selId)!;
 
   useEffect(() => {
@@ -168,43 +55,17 @@ const CommunityCircles: React.FC = () => {
     (raw: string) => {
       setEditVal(raw);
       const n = Math.max(0, parseInt(raw, 10) || 0);
-      setPeriods((prev) => {
-        const next = prev.map((p) =>
-          p.id === activePId
-            ? { ...p, numbers: { ...p.numbers, [selId]: n } }
-            : p
-        );
-        savePeriods(next);
-        return next;
-      });
+      setNumber(selId, n);
     },
-    [activePId, selId]
+    [selId, setNumber],
   );
 
   const confirmAdd = useCallback(() => {
-    const lbl = newLabel.trim();
-    if (!lbl) return;
-    const p = mkPeriod(lbl);
-    setPeriods((prev) => {
-      const next = [...prev, p];
-      savePeriods(next);
-      return next;
-    });
-    setActivePId(p.id);
+    if (!newLabel.trim()) return;
+    addPeriod(newLabel);
     setAddingP(false);
     setNewLabel("");
-  }, [newLabel]);
-
-  const removePeriod = useCallback(
-    (id: string) => {
-      if (periods.length <= 1) return;
-      const next = periods.filter((p) => p.id !== id);
-      setPeriods(next);
-      savePeriods(next);
-      if (activePId === id) setActivePId(next[next.length - 1]!.id);
-    },
-    [periods, activePId]
-  );
+  }, [newLabel, addPeriod]);
 
   const trend = periods.map((p) => ({
     label: p.label,

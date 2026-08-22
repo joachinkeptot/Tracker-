@@ -3992,3 +3992,128 @@ button:disabled {
   max-width: 36px;
   line-height: 1.2;
 }
+
+/* ── LSA Report ────────────────────────────────────────────────────────── */
+
+.lsa-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lsa-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lsa-period-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+}
+
+.lsa-period-select select {
+  min-width: 180px;
+}
+
+.lsa-report {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.lsa-title {
+  margin: 0;
+}
+
+.lsa-section h3 {
+  margin: 0 0 0.6rem 0;
+}
+
+.lsa-subhead {
+  margin: 1rem 0 0.6rem 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lsa-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+
+.lsa-stat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lsa-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: "DM Mono", monospace;
+}
+
+.lsa-stat-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.lsa-stat--total {
+  border-color: var(--neon);
+}
+
+.lsa-stat--big {
+  max-width: 320px;
+}
+
+.lsa-stat--big .lsa-stat-value {
+  font-size: 2.5rem;
+  color: var(--neon);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .lsa-report,
+  .lsa-report * {
+    visibility: visible;
+  }
+  .lsa-report {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: #fff;
+    color: #000;
+    border: none;
+  }
+  .lsa-report .lsa-stat,
+  .lsa-report .lsa-textarea {
+    background: #fff;
+    border-color: #999;
+    color: #000;
+  }
+  .lsa-report .lsa-subhead,
+  .lsa-report .lsa-stat-label,
+  .lsa-report .muted {
+    color: #444;
+  }
+  .lsa-report textarea {
+    resize: none;
+  }
+}

@@ -67,9 +67,26 @@ export const Header: React.FC<HeaderProps> = ({
         >
           Circles
         </button>
+        <button
+          className={`tab ${viewMode === "report" ? "tab--active" : ""}`}
+          onClick={() => handleViewChange("report")}
+          role="tab"
+        >
+          Report
+        </button>
+        <button
+          className={`tab ${viewMode === "map" ? "tab--active" : ""}`}
+          onClick={() => handleViewChange("map")}
+          role="tab"
+        >
+          Map
+        </button>
       </div>
       <div className="board__actions">
-        {viewMode !== "analytics" && viewMode !== "circles" && (
+        {viewMode !== "analytics" &&
+          viewMode !== "circles" &&
+          viewMode !== "report" &&
+          viewMode !== "map" && (
           <>
             <button className="btn btn--sm" onClick={onAddConnection}>
               + Add Connection

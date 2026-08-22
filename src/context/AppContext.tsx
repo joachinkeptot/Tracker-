@@ -154,6 +154,21 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const deletePerson = (id: string) => {
     peopleState.deletePerson(id);
+    // Unlink this person from other people's connections and from activities
+    setPeople((prev) =>
+      prev.map((p) =>
+        p.connections?.some((c) => c.personId === id)
+          ? { ...p, connections: p.connections.filter((c) => c.personId !== id) }
+          : p,
+      ),
+    );
+    setActivities((prev) =>
+      prev.map((a) =>
+        a.participantIds.includes(id)
+          ? { ...a, participantIds: a.participantIds.filter((pid) => pid !== id) }
+          : a,
+      ),
+    );
     if (selected.type === "people" && selected.id === id) {
       setSelectedState({ type: "people", id: null });
     }
@@ -161,6 +176,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const deleteActivity = (id: string) => {
     activitiesState.deleteActivity(id);
+    // Unlink this activity from any people connected to it
+    setPeople((prev) =>
+      prev.map((p) =>
+        p.connectedActivities?.includes(id)
+          ? {
+              ...p,
+              connectedActivities: p.connectedActivities.filter(
+                (actId) => actId !== id,
+              ),
+            }
+          : p,
+      ),
+    );
     if (selected.type === "activities" && selected.id === id) {
       setSelectedState({ type: "activities", id: null });
     }

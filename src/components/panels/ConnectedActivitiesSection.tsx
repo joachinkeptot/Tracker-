@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApp } from "../../context";
 
 interface ConnectedActivitiesSectionProps {
@@ -14,6 +14,12 @@ export const ConnectedActivitiesSection: React.FC<
   const [selectedActivityIds, setSelectedActivityIds] = useState<Set<string>>(
     new Set(connectedActivities),
   );
+
+  useEffect(() => {
+    setSelectedActivityIds(new Set(connectedActivities));
+    setIsEditMode(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personId]);
 
   const person = people.find((p) => p.id === personId);
   if (!person) return null;

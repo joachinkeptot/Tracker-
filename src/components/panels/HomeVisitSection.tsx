@@ -77,11 +77,10 @@ export const HomeVisitSection: React.FC<HomeVisitSectionProps> = ({
           <div className="form-row" style={{ marginBottom: "0.5rem" }}>
             <select value={hvPurpose} onChange={(e) => setHvPurpose(e.target.value as VisitPurpose | "")} style={{ fontSize: "0.875rem" }}>
               <option value="">Purpose (optional)</option>
+              <option value="Introduction">Introduction</option>
               <option value="Follow-up">Follow-up</option>
-              <option value="Initial Visit">Initial Visit</option>
               <option value="Social">Social</option>
               <option value="Teaching">Teaching</option>
-              <option value="Service">Service</option>
             </select>
           </div>
           <div className="form-row" style={{ marginBottom: "0.5rem" }}>

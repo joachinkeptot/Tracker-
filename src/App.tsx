@@ -13,6 +13,8 @@ import {
 import { PublicForms } from "./components/forms";
 import Analytics from "./components/analytics/Analytics";
 import CommunityCircles from "./components/circles/CommunityCircles";
+import LSAReport from "./components/reports/LSAReport";
+import { MapView } from "./components/map";
 import {
   AnalyticsErrorBoundary,
   GlobalErrorBoundary,
@@ -141,7 +143,7 @@ const AppContent: React.FC = () => {
   // Reset to first page whenever the filtered list or view changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [viewMode, filteredPeople, visibleActivities, visibleFamilies]);
+  }, [viewMode, visiblePeople, visibleActivities, visibleFamilies]);
 
   return (
     <div className="app">
@@ -201,6 +203,12 @@ const AppContent: React.FC = () => {
             <div className="panel__section">
               <CommunityCircles />
             </div>
+          ) : viewMode === "report" ? (
+            <div className="panel__section">
+              <LSAReport />
+            </div>
+          ) : viewMode === "map" ? (
+            <MapView people={visiblePeople} />
           ) : (
             <div className="panel__section">
               <div className="dashboard-layout">

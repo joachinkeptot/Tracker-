@@ -191,7 +191,9 @@ export type ViewMode =
   | "families"
   | "activities"
   | "analytics"
-  | "circles";
+  | "circles"
+  | "report"
+  | "map";
 
 // Selected item state
 export interface SelectedItem {
